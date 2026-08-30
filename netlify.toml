@@ -1,0 +1,26 @@
+[build]
+  publish = "."
+  edge_functions = "netlify/edge-functions"
+
+# Fallback: qualquer rota devolve o index.html (é uma app de página única).
+# Note: /api/sync/* NÃO é servido por este site estático — ver README.
+# Note: /api/claude-proxy, /api/openai-proxy, /api/gemini-proxy são servidos
+# directamente pelas Edge Functions em netlify/edge-functions/ (registam a
+# própria rota via `export const config = { path: ... }` em cada ficheiro,
+# não precisam de redirect aqui).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
