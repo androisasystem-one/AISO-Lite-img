@@ -48,12 +48,30 @@ export default async (request) => {
     delete body.__anthropicBeta;
   }
 
+  const wantsStream = body.stream === true;
+
   try {
     const upstream = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers,
       body: JSON.stringify(body),
     });
+
+    if (wantsStream) {
+      // Pipe the raw SSE stream straight through to the caller. This
+      // returns response headers to the caller almost immediately (as
+      // soon as Anthropic starts responding), instead of waiting for the
+      // full generation to finish — avoiding Netlify's 40s "must return
+      // headers" limit on Edge Functions, no matter how long the
+      // response takes overall.
+      return new Response(upstream.body, {
+        status: upstream.status,
+        headers: {
+          "Content-Type": upstream.headers.get("content-type") || "text/event-stream",
+        },
+      });
+    }
+
     const text = await upstream.text();
     return new Response(text, {
       status: upstream.status,
